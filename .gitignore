@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# But not these files
+!*.R
+!*.sh
+
+# Even if they are in subdirectories
+!*/
+
+# Keep .gitignore
+!.gitignore
+
+.snakemake/
