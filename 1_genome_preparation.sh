@@ -10,18 +10,38 @@
 #SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/1_genome_preparation.err"
 #SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/1_genome_preparation.out"
 
-
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
 conda activate jupyter_nb
 
+# Create necessary directories
+mkdir -p genome
+mkdir -p logs
+mkdir -p analysis/fastqc/pre_trim
+mkdir -p analysis/fastqc/post_trim
+mkdir -p analysis/trimmed
+mkdir -p analysis/aligned
+mkdir -p analysis/peaks
+mkdir -p analysis/visualization
+mkdir -p analysis/qc
+mkdir -p analysis/annotation
+
 # Download and prepare reference genome
 cd genome
+
+# Download primary assembly to avoid alternative contigs
 wget https://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 
-# Run bowtie2-build with parallel processing
+# Build bowtie2 indices
+echo "Building human genome index..."
 bowtie2-build --threads 32 Homo_sapiens.GRCh38.dna.primary_assembly.fa GRCh38
+
+
+# # Generate chromosome sizes file for downstream analysis
+# samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa
+# cut -f1,2 Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai > hg38.chrom.sizes
+
 cd ..
 
 echo "Genome preparation completed"

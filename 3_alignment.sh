@@ -8,28 +8,27 @@
 #SBATCH --array=0-5
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/3_alignment_%A_%a.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/3_alignment_%A_%a.out"
+#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/3_alignment_%a.err"
+#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/3_alignment_%a.out"
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
 conda activate jupyter_nb
 
-# Create necessary directories
-mkdir -p analysis/aligned
-mkdir -p logs/aligned
-
-# Define sample array
-samples=(GFP-1 GFP-2 GFP-3 YAF-1 YAF-2 YAF-3)
+# Define samples
+samples=(GFP_1 GFP_2 GFP_3 YAF_1 YAF_2 YAF_3)
 sample=${samples[$SLURM_ARRAY_TASK_ID]}
 
 echo "Processing sample: ${sample}"
 
-# Align with Bowtie2
+# CUT&Tag-optimized alignment with Bowtie2
 echo "Aligning ${sample}..."
-bowtie2 -p 16 -x genome/GRCh38 \
+bowtie2 -p 16 \
+    -x genome/GRCh38 \
     --local --very-sensitive-local \
     --no-mixed --no-discordant \
+    --no-overlap --no-dovetail \
+    -I 10 -X 700 \
     -1 analysis/trimmed/${sample}_R1_paired.fastq.gz \
     -2 analysis/trimmed/${sample}_R2_paired.fastq.gz \
     2> logs/aligned/${sample}.align.log | \
@@ -37,78 +36,37 @@ bowtie2 -p 16 -x genome/GRCh38 \
 
 # Sort BAM
 echo "Sorting ${sample}..."
-samtools sort -@ 16 analysis/aligned/${sample}.bam \
+samtools sort -@ 16 \
+    analysis/aligned/${sample}.bam \
     -o analysis/aligned/${sample}.sorted.bam
 
 # Index BAM
 echo "Indexing ${sample}..."
 samtools index analysis/aligned/${sample}.sorted.bam
 
-# Remove duplicates
-echo "Removing duplicates for ${sample}..."
+# Mark duplicates
+echo "Marking duplicates for ${sample}..."
 picard MarkDuplicates \
     I=analysis/aligned/${sample}.sorted.bam \
     O=analysis/aligned/${sample}.dedup.bam \
-    M=logs/aligned/${sample}.metrics.txt \
-    REMOVE_DUPLICATES=true
+    M=analysis/qc/${sample}_dup_metrics.txt \
+    REMOVE_DUPLICATES=true \
+    VALIDATION_STRINGENCY=LENIENT
 
 # Index final BAM
 samtools index analysis/aligned/${sample}.dedup.bam
 
-# Generate mapping statistics
-samtools flagstat analysis/aligned/${sample}.dedup.bam \
-    > logs/aligned/${sample}_flagstat.txt
+# Generate alignment statistics
+echo "Generating alignment statistics..."
+samtools flagstat analysis/aligned/${sample}.dedup.bam > \
+    analysis/qc/${sample}_flagstat.txt
+
+# Generate fragment size distribution
+echo "Generating fragment size distribution..."
+picard CollectInsertSizeMetrics \
+    I=analysis/aligned/${sample}.dedup.bam \
+    O=analysis/qc/${sample}_insert_size_metrics.txt \
+    H=analysis/qc/${sample}_insert_size_histogram.pdf \
+    M=0.5
 
 echo "Alignment completed for ${sample}"
-
-
-####### Serial #######
-# # Activate conda environment
-# source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-# conda activate jupyter_nb
-
-# # Create necessary directories
-# mkdir -p analysis/aligned
-# mkdir -p logs/aligned
-
-# # Alignment and processing
-# for sample in GFP-{1,2,3} YAF-{1,2,3}
-# do
-#     echo "Processing sample: ${sample}"
-    
-#     # Align with Bowtie2 (increased threads)
-#     echo "Aligning ${sample}..."
-#     bowtie2 -p 16 -x genome/GRCh38 \
-#         --local --very-sensitive-local \
-#         --no-mixed --no-discordant \
-#         -1 analysis/trimmed/${sample}_R1_paired.fastq.gz \
-#         -2 analysis/trimmed/${sample}_R2_paired.fastq.gz \
-#         2> logs/aligned/${sample}.align.log | \
-#         samtools view -@ 16 -bS - > analysis/aligned/${sample}.bam
-    
-#     # Sort BAM (increased threads)
-#     echo "Sorting ${sample}..."
-#     samtools sort -@ 16 analysis/aligned/${sample}.bam \
-#         -o analysis/aligned/${sample}.sorted.bam
-    
-#     # Index BAM
-#     echo "Indexing ${sample}..."
-#     samtools index analysis/aligned/${sample}.sorted.bam
-    
-#     # Remove duplicates
-#     echo "Removing duplicates for ${sample}..."
-#     picard MarkDuplicates \
-#         I=analysis/aligned/${sample}.sorted.bam \
-#         O=analysis/aligned/${sample}.dedup.bam \
-#         M=logs/aligned/${sample}.metrics.txt \
-#         REMOVE_DUPLICATES=true
-    
-#     # Index final BAM
-#     samtools index analysis/aligned/${sample}.dedup.bam
-    
-#     # Generate mapping statistics
-#     samtools flagstat analysis/aligned/${sample}.dedup.bam \
-#         > logs/aligned/${sample}_flagstat.txt
-# done
-
-# echo "Alignment completed"

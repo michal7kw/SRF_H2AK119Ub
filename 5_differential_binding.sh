@@ -14,9 +14,6 @@
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
 conda activate jupyter_nb
 
-# Install/update BiocManager and DiffBind
-# R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager'); BiocManager::install('DiffBind', force = TRUE)"
-
 # Change to project directory
 cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub
 
@@ -26,6 +23,9 @@ echo "Contents of analysis/peaks:"
 ls -l analysis/peaks/
 echo "Contents of analysis/aligned:"
 ls -l analysis/aligned/
+
+# Install required R packages if needed
+# R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager'); BiocManager::install(c('DiffBind', 'ChIPseeker', 'clusterProfiler', 'org.Hs.eg.db', 'TxDb.Hsapiens.UCSC.hg38.knownGene'), force = TRUE)"
 
 # Run R script
 Rscript scripts/5_differential_binding.R

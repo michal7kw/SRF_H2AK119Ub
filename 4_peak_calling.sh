@@ -8,8 +8,8 @@
 #SBATCH --array=0-5
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/4_peak_calling_%A_%a.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/4_peak_calling_%A_%a.out"
+#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/4_peak_calling_%a.err"
+#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/4_peak_calling_%a.out"
 
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
 conda activate jupyter_nb
@@ -20,7 +20,7 @@ mkdir -p analysis/visualization
 mkdir -p analysis/qc
 
 # Define samples
-samples=(YAF-1 YAF-2 YAF-3 GFP-1 GFP-2 GFP-3)
+samples=(YAF_1 YAF_2 YAF_3 GFP_1 GFP_2 GFP_3)
 sample=${samples[$SLURM_ARRAY_TASK_ID]}
 
 # Generate bigwig for visualization
