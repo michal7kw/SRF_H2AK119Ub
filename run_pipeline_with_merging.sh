@@ -28,7 +28,7 @@ submit_job() {
 echo "Starting CUT&Tag pipeline with technical replicate merging..."
 
 # Clear any existing jobs (optional)
-scancel -u $USER
+# scancel -u $USER
 
 # 1. Genome preparation
 echo "1. Submitting genome preparation..."

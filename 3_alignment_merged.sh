@@ -5,7 +5,7 @@
 #SBATCH --time=INFINITE
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
-#SBATCH --array=0-11  # Adjusted for all technical replicates
+#SBATCH --array=0-5  # Adjusted for all technical replicates
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
 #SBATCH --error="logs/3_alignment_merged_%a.err"
