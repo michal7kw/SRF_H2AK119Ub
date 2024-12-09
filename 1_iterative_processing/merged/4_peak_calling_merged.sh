@@ -8,12 +8,14 @@
 #SBATCH --array=0-5  # One job per merged sample
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="logs/4_peak_calling_merged_%a.err"
-#SBATCH --output="logs/4_peak_calling_merged_%a.out"
+#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged/logs/4_peak_calling_merged_%a.err"
+#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged/logs/4_peak_calling_merged_%a.out"
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
 # Load sample configuration
 source config/samples.conf

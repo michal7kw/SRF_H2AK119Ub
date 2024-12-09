@@ -7,12 +7,14 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/2_multiqc.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/2_multiqc.out"
+#SBATCH --error="logs/2_multiqc.err"
+#SBATCH --output="logs/2_multiqc.out"
 
 # Load conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/single
 
 # Create directory for MultiQC reports
 mkdir -p analysis/multiqc

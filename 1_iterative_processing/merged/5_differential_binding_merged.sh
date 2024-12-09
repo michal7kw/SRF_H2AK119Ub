@@ -7,12 +7,14 @@
 #SBATCH --ntasks=32
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="logs/5_differential_binding_merged_%A.err"
-#SBATCH --output="logs/5_differential_binding_merged_%A.out"
+#SBATCH --error="logs/5_differential_binding_merged.err"
+#SBATCH --output="logs/5_differential_binding_merged.out"
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
 # Print current directory and list key files
 echo "Current directory: $(pwd)"
@@ -28,7 +30,7 @@ if [ ! -d "analysis/peaks_merged" ] || [ ! -d "analysis/aligned_merged" ]; then
 fi
 
 # Install required R packages if needed
-R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager'); BiocManager::install(c('DiffBind', 'ChIPseeker', 'clusterProfiler', 'org.Hs.eg.db', 'TxDb.Hsapiens.UCSC.hg38.knownGene'), force = TRUE)"
+# R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager'); BiocManager::install(c('DiffBind', 'ChIPseeker', 'clusterProfiler', 'org.Hs.eg.db', 'TxDb.Hsapiens.UCSC.hg38.knownGene'), force = TRUE)"
 
 # Run R script
 echo "Starting differential binding analysis..."

@@ -8,11 +8,13 @@
 #SBATCH --array=0-5
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/4_peak_calling_%a.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/4_peak_calling_%a.out"
+#SBATCH --error="logs/4_peak_calling_%a.err"
+#SBATCH --output="logs/4_peak_calling_%a.out"
 
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/single
 
 mkdir -p analysis/peaks
 mkdir -p logs/peaks

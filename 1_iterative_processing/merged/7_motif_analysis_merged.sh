@@ -12,7 +12,9 @@
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
 # Create necessary directories
 mkdir -p analysis/motifs_merged
@@ -28,7 +30,7 @@ fi
 run_homer_analysis() {
     local bed_file=$1
     local output_dir=$2
-    local genome_file="genome/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+    local genome_file="../genome/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
     
     echo "Running HOMER on ${bed_file}..."
     findMotifsGenome.pl \

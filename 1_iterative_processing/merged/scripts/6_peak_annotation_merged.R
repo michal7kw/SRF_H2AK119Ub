@@ -35,13 +35,13 @@ standardize_chromosomes <- function(gr) {
 }
 
 # Create output directories
-dir.create("../analysis/annotation_merged/figures", recursive = TRUE, showWarnings = FALSE)
-dir.create("../analysis/annotation_merged/tables", recursive = TRUE, showWarnings = FALSE)
+dir.create("analysis/annotation_merged/figures", recursive = TRUE, showWarnings = FALSE)
+dir.create("analysis/annotation_merged/tables", recursive = TRUE, showWarnings = FALSE)
 
 # Load differential binding results
 print("Loading differential binding results...")
-all_peaks <- readRDS("../analysis/diffbind_merged/all_peaks.rds")
-sig_peaks <- readRDS("../analysis/diffbind_merged/significant_peaks.rds")
+all_peaks <- readRDS("analysis/diffbind_merged/all_peaks.rds")
+sig_peaks <- readRDS("analysis/diffbind_merged/significant_peaks.rds")
 
 # Standardize chromosome names
 print("Standardizing chromosome names...")
@@ -61,7 +61,7 @@ peakAnno <- annotatePeak(sig_peaks,
 
 # Generate comprehensive annotation visualizations
 print("Generating annotation plots...")
-pdf("../analysis/annotation_merged/figures/annotation_plots.pdf", width=10, height=8)
+pdf("analysis/annotation_merged/figures/annotation_plots.pdf", width=10, height=8)
 
 # Distribution of peaks relative to TSS
 plotDistToTSS(peakAnno, 
@@ -86,7 +86,7 @@ dev.off()
 print("Saving annotation results...")
 anno_df <- as.data.frame(peakAnno)
 write.table(anno_df, 
-            file="../analysis/annotation_merged/tables/peak_annotation_full.txt",
+            file="analysis/annotation_merged/tables/peak_annotation_full.txt",
             sep="\t", quote=FALSE, row.names=FALSE)
 
 # Create gene lists with proper symbols
@@ -107,20 +107,20 @@ genes_df <- unique(genes_df)
 
 # Save gene lists
 write.table(genes_df,
-            file = "../analysis/annotation_merged/tables/target_genes_with_ids.txt",
+            file = "analysis/annotation_merged/tables/target_genes_with_ids.txt",
             sep = "\t",
             quote = FALSE,
             row.names = FALSE)
 
 # Save separate lists for up/down regulated genes
 write.table(unique(subset(genes_df, Type == "YAF_enriched")$Symbol),
-            file = "../analysis/annotation_merged/tables/YAF_enriched_genes.txt",
+            file = "analysis/annotation_merged/tables/YAF_enriched_genes.txt",
             quote = FALSE,
             row.names = FALSE,
             col.names = FALSE)
 
 write.table(unique(subset(genes_df, Type == "GFP_enriched")$Symbol),
-            file = "../analysis/annotation_merged/tables/GFP_enriched_genes.txt",
+            file = "analysis/annotation_merged/tables/GFP_enriched_genes.txt",
             quote = FALSE,
             row.names = FALSE,
             col.names = FALSE)
@@ -137,14 +137,14 @@ if(length(yaf_genes) > 0) {
                        pvalueCutoff = 0.05)
     
     if(nrow(ego_yaf) > 0) {
-        pdf("../analysis/annotation_merged/figures/YAF_pathway_analysis.pdf", width=12, height=8)
+        pdf("analysis/annotation_merged/figures/YAF_pathway_analysis.pdf", width=12, height=8)
         print(dotplot(ego_yaf, showCategory=20, title="YAF-enriched Pathways (Merged Analysis)"))
         print(emapplot(ego_yaf, showCategory=30))
         print(cnetplot(ego_yaf, showCategory=10, circular=TRUE))
         dev.off()
         
         write.csv(as.data.frame(ego_yaf), 
-                 "../analysis/annotation_merged/tables/YAF_pathway_analysis.csv",
+                 "analysis/annotation_merged/tables/YAF_pathway_analysis.csv",
                  row.names=FALSE)
     }
 }
@@ -159,21 +159,21 @@ if(length(gfp_genes) > 0) {
                        pvalueCutoff = 0.05)
     
     if(nrow(ego_gfp) > 0) {
-        pdf("../analysis/annotation_merged/figures/GFP_pathway_analysis.pdf", width=12, height=8)
+        pdf("analysis/annotation_merged/figures/GFP_pathway_analysis.pdf", width=12, height=8)
         print(dotplot(ego_gfp, showCategory=20, title="GFP-enriched Pathways (Merged Analysis)"))
         print(emapplot(ego_gfp, showCategory=30))
         print(cnetplot(ego_gfp, showCategory=10, circular=TRUE))
         dev.off()
         
         write.csv(as.data.frame(ego_gfp), 
-                 "../analysis/annotation_merged/tables/GFP_pathway_analysis.csv",
+                 "analysis/annotation_merged/tables/GFP_pathway_analysis.csv",
                  row.names=FALSE)
     }
 }
 
 # Compare pathways between conditions
 if(exists("ego_yaf") && exists("ego_gfp")) {
-    pdf("../analysis/annotation_merged/figures/pathway_comparison.pdf", width=12, height=8)
+    pdf("analysis/annotation_merged/figures/pathway_comparison.pdf", width=12, height=8)
     compareCluster(list(YAF=yaf_genes, GFP=gfp_genes),
                   fun="enrichGO",
                   OrgDb=org.Hs.eg.db,

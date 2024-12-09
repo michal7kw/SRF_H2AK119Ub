@@ -7,12 +7,14 @@
 #SBATCH --ntasks=32
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/1_genome_preparation.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/1_genome_preparation.out"
+#SBATCH --error="logs/1_genome_preparation.err"
+#SBATCH --output="logs/1_genome_preparation.out"
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
 # Create necessary directories
 mkdir -p genome
@@ -27,7 +29,7 @@ mkdir -p analysis/qc
 mkdir -p analysis/annotation
 
 # Download and prepare reference genome
-cd genome
+cd ../genome
 
 # Download primary assembly to avoid alternative contigs
 wget https://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz

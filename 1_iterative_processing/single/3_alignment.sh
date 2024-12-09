@@ -8,12 +8,14 @@
 #SBATCH --array=0-5
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/3_alignment_%a.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/3_alignment_%a.out"
+#SBATCH --error="logs/3_alignment_%a.err"
+#SBATCH --output="logs/3_alignment_%a.out"
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/single
 
 # Define samples
 samples=(GFP_1 GFP_2 GFP_3 YAF_1 YAF_2 YAF_3)
@@ -24,7 +26,7 @@ echo "Processing sample: ${sample}"
 # CUT&Tag-optimized alignment with Bowtie2
 echo "Aligning ${sample}..."
 bowtie2 -p 16 \
-    -x genome/GRCh38 \
+    -x ../../genome/GRCh38 \
     --local --very-sensitive-local \
     --no-mixed --no-discordant \
     --no-overlap --no-dovetail \

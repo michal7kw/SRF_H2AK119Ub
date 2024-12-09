@@ -10,10 +10,12 @@
 #SBATCH --mail-user=kubacki.michal@hsr.it
 #SBATCH --error="logs/2_quality_control_merged_%a.err"
 #SBATCH --output="logs/2_quality_control_merged_%a.out"
-#SBATCH --array=0-11  # Adjusted for all technical replicates
+#SBATCH --array=0-5  # Adjusted for all samples (6 samples total)
 
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
+
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
 # Load sample configuration
 source config/samples.conf
@@ -25,20 +27,20 @@ mkdir -p analysis/trimmed_merged
 mkdir -p logs/trimming_merged
 
 # Get current sample
-sample=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
-echo "Processing sample: $sample"
+sample=${MERGED_SAMPLES[$SLURM_ARRAY_TASK_ID]}
+echo "Processing sample: ${sample}"
 
 # Initial FastQC
 echo "Running initial FastQC for ${sample}..."
 fastqc -o analysis/fastqc_merged/pre_trim -t 16 \
-    DATA/fastq/${sample}_R1_001.fastq.gz \
-    DATA/fastq/${sample}_R2_001.fastq.gz
+    ../../DATA/fastq/${sample}_R1_001.fastq.gz \
+    ../../DATA/fastq/${sample}_R2_001.fastq.gz
 
 # CUT&Tag-specific trimming parameters
 echo "Trimming ${sample}..."
 trimmomatic PE -threads 16 \
-    DATA/fastq/${sample}_R1_001.fastq.gz \
-    DATA/fastq/${sample}_R2_001.fastq.gz \
+    ../../DATA/fastq/${sample}_R1_001.fastq.gz \
+    ../../DATA/fastq/${sample}_R2_001.fastq.gz \
     analysis/trimmed_merged/${sample}_R1_paired.fastq.gz \
     analysis/trimmed_merged/${sample}_R1_unpaired.fastq.gz \
     analysis/trimmed_merged/${sample}_R2_paired.fastq.gz \

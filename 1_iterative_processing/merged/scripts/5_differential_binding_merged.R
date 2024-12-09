@@ -9,12 +9,12 @@ library(GenomicRanges)
 library(clusterProfiler)
 
 # Create necessary directories
-dir.create("../analysis/diffbind_merged", recursive = TRUE, showWarnings = FALSE)
-dir.create("../analysis/annotation_merged", recursive = TRUE, showWarnings = FALSE)
-dir.create("../analysis/enrichment_merged", recursive = TRUE, showWarnings = FALSE)
+dir.create("analysis/diffbind_merged", recursive = TRUE, showWarnings = FALSE)
+dir.create("analysis/annotation_merged", recursive = TRUE, showWarnings = FALSE)
+dir.create("analysis/enrichment_merged", recursive = TRUE, showWarnings = FALSE)
 
 # Load sample configuration
-source("../1_iterative_processing/config/samples.conf")
+source("config/samples.conf")
 
 # Function to check if files exist and have content
 check_files <- function(samples_df) {
@@ -59,9 +59,9 @@ samples <- data.frame(
     Factor = rep("H2AK119Ub", length(MERGED_SAMPLES)),
     Condition = sub("_[0-9]+$", "", MERGED_SAMPLES),
     Replicate = as.numeric(sub("^.*_", "", MERGED_SAMPLES)),
-    bamReads = file.path("../analysis/aligned_merged", 
+    bamReads = file.path("analysis/aligned_merged", 
                         paste0(sub("_", "-", MERGED_SAMPLES), ".dedup.bam")),
-    Peaks = file.path("../analysis/peaks_merged", 
+    Peaks = file.path("analysis/peaks_merged", 
                      paste0(sub("_", "-", MERGED_SAMPLES), "_peaks.broadPeak")),
     PeakCaller = rep("broad", length(MERGED_SAMPLES))
 )
@@ -113,7 +113,7 @@ tryCatch({
 
 # Generate QC plots
 print("Generating QC plots...")
-pdf("../analysis/diffbind_merged/qc_plots.pdf")
+pdf("analysis/diffbind_merged/qc_plots.pdf")
 # Sample correlation heatmap
 dba.plotHeatmap(dba_data, correlations=TRUE,
                 main="Sample Correlations (Merged Analysis)")
@@ -143,11 +143,11 @@ res_significant <- dba.report(dba_data, th=0.05)
 
 # Save results
 print("Saving results...")
-saveRDS(res_all, "../analysis/diffbind_merged/all_peaks.rds")
-saveRDS(res_significant, "../analysis/diffbind_merged/significant_peaks.rds")
+saveRDS(res_all, "analysis/diffbind_merged/all_peaks.rds")
+saveRDS(res_significant, "analysis/diffbind_merged/significant_peaks.rds")
 
 # Generate analysis plots
-pdf("../analysis/diffbind_merged/analysis_plots.pdf")
+pdf("analysis/diffbind_merged/analysis_plots.pdf")
 # MA plot
 dba.plotMA(dba_data, main="MA Plot (Merged Analysis)")
 # Volcano plot
@@ -171,13 +171,13 @@ gfp_enriched <- df_all %>%
     select(seqnames, start, end)
 
 write.table(yaf_enriched, 
-            file="../analysis/diffbind_merged/YAF_enriched.bed", 
+            file="analysis/diffbind_merged/YAF_enriched.bed", 
             sep="\t", 
             quote=FALSE, 
             row.names=FALSE, 
             col.names=FALSE)
 write.table(gfp_enriched, 
-            file="../analysis/diffbind_merged/GFP_enriched.bed", 
+            file="analysis/diffbind_merged/GFP_enriched.bed", 
             sep="\t", 
             quote=FALSE, 
             row.names=FALSE, 

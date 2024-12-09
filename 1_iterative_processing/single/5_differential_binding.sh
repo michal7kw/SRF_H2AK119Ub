@@ -7,15 +7,14 @@
 #SBATCH --ntasks=32
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
-#SBATCH --error="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/5_differential_binding_%A.err"
-#SBATCH --output="/beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/logs/5_differential_binding_%A.out"
+#SBATCH --error="logs/5_differential_binding_%A.err"
+#SBATCH --output="logs/5_differential_binding_%A.out"
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate jupyter_nb
+conda activate snakemake
 
-# Change to project directory
-cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub
+cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/single
 
 # Print current directory and list key files
 echo "Current directory: $(pwd)"
@@ -28,4 +27,4 @@ ls -l analysis/aligned/
 # R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager'); BiocManager::install(c('DiffBind', 'ChIPseeker', 'clusterProfiler', 'org.Hs.eg.db', 'TxDb.Hsapiens.UCSC.hg38.knownGene'), force = TRUE)"
 
 # Run R script
-Rscript scripts/5_differential_binding.R
+Rscript ../scripts/5_differential_binding.R
