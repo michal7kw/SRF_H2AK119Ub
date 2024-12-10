@@ -39,7 +39,7 @@ multiqc \
 # Generate QC summary
 echo "Sample,RawReads,CleanReads,DuplicationRate" > analysis/qc/qc_summary.csv
 for sample in GFP_{1,2,3} YAF_{1,2,3}; do
-    raw_reads=$(zcat DATA/fastq/${sample}_R1_001.fastq.gz | echo $((`wc -l`/4)))
+    raw_reads=$(zcat ../../DATA/fastq/${sample}_R1_001.fastq.gz | echo $((`wc -l`/4)))
     clean_reads=$(zcat analysis/trimmed/${sample}_R1_paired.fastq.gz | echo $((`wc -l`/4)))
     dup_rate=$(grep "PERCENT_DUPLICATION" analysis/qc/${sample}_dup_metrics.txt | cut -f9)
     echo "${sample},${raw_reads},${clean_reads},${dup_rate}" >> analysis/qc/qc_summary.csv

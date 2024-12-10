@@ -28,7 +28,7 @@ mkdir -p logs/trimming
 
 # Get current sample
 sample=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
-echo "Processing sample: ${sample}
+echo "Processing sample: ${sample}"
 
 # Initial FastQC
 echo "Running initial FastQC for ${sample}..."
@@ -56,5 +56,4 @@ echo "Running post-trim FastQC for ${sample}..."
 fastqc -o analysis/fastqc/post_trim -t 16 \
     analysis/trimmed/${sample}_R1_paired.fastq.gz \
     analysis/trimmed/${sample}_R2_paired.fastq.gz
-
 echo "Quality control completed for ${sample}" 

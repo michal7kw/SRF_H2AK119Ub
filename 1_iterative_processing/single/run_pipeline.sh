@@ -48,13 +48,13 @@ echo "Starting CUT&Tag pipeline..."
 # echo "Genome preparation job ID: $genome_job"
 
 # 2. Quality control for technical replicates
-echo "2a. Submitting quality control for technical replicates..."
-qc_job=$(submit_job 2a_quality_control.sh)
-echo "Quality control job ID: $qc_job"
+# echo "2a. Submitting quality control for technical replicates..."
+# qc_job=$(submit_job 2a_quality_control.sh)
+# echo "Quality control job ID: $qc_job"
 
 # 2b. MultiQC
 echo "2b. Submitting MultiQC..."
-multiqc_job=$(submit_job 2b_multiqc.sh $qc_job)
+multiqc_job=$(submit_job 2b_multiqc.sh)
 echo "MultiQC job ID: $multiqc_job"
 
 # 3. Alignment of technical replicates

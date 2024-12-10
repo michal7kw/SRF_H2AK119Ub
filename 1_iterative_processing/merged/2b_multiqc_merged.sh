@@ -57,7 +57,7 @@ for merged_sample in "${MERGED_SAMPLES[@]}"; do
     dup_rates=()
     
     for tech_rep in ${tech_reps[@]}; do
-        raw_reads=$(zcat DATA/fastq/${tech_rep}_R1_001.fastq.gz | echo $((`wc -l`/4)))
+        raw_reads=$(zcat ../../DATA/fastq/${tech_rep}_R1_001.fastq.gz | echo $((`wc -l`/4)))
         clean_reads=$(zcat analysis/trimmed_merged/${tech_rep}_R1_paired.fastq.gz | echo $((`wc -l`/4)))
         dup_rate=$(grep "PERCENT_DUPLICATION" analysis/qc_merged/${tech_rep}_dup_metrics.txt | cut -f9)
         
