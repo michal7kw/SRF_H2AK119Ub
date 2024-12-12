@@ -13,7 +13,7 @@
 #SBATCH --array=0-5  # Adjusted for all samples (6 samples total)
 
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate snakemake
+conda activate smarcb1_analysis
 
 cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
@@ -29,6 +29,17 @@ mkdir -p logs/trimming_merged
 # Get current sample
 sample=${MERGED_SAMPLES[$SLURM_ARRAY_TASK_ID]}
 echo "Processing sample: ${sample}"
+
+# Add version logging
+echo "Software versions:"
+fastqc --version
+trimmomatic -version
+
+# Add input file checking
+if [ ! -f "../../DATA/fastq/${sample}_R1_001.fastq.gz" ] || [ ! -f "../../DATA/fastq/${sample}_R2_001.fastq.gz" ]; then
+    echo "ERROR: Input fastq files not found for sample ${sample}"
+    exit 1
+fi
 
 # Initial FastQC
 echo "Running initial FastQC for ${sample}..."
@@ -56,5 +67,11 @@ echo "Running post-trim FastQC for ${sample}..."
 fastqc -o analysis/fastqc_merged/post_trim -t 16 \
     analysis/trimmed_merged/${sample}_R1_paired.fastq.gz \
     analysis/trimmed_merged/${sample}_R2_paired.fastq.gz
+
+# Add completion check
+if [ ! -f "analysis/fastqc_merged/post_trim/${sample}_R1_paired_fastqc.html" ]; then
+    echo "ERROR: FastQC failed to generate output for ${sample}"
+    exit 1
+fi
 
 echo "Quality control completed for ${sample}" 

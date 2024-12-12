@@ -1,9 +1,23 @@
-# Load required libraries
-library(ChIPseeker)
-library(TxDb.Hsapiens.UCSC.hg38.knownGene)
-library(org.Hs.eg.db)
-library(clusterProfiler)
-library(dplyr)
+# Add suppressPackageStartupMessages and enhanced error handling
+suppressPackageStartupMessages({
+    library(ChIPseeker)
+    library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+    library(org.Hs.eg.db)
+    library(clusterProfiler)
+    library(dplyr)
+})
+
+# Create output directories
+dir.create("analysis/gene_lists_merged", recursive = TRUE, showWarnings = FALSE)
+
+# Read DiffBind results with error checking
+diff_peaks_file <- "analysis/diffbind_merged/all_differential_peaks.txt"
+if (!file.exists(diff_peaks_file)) {
+    stop("Input file not found: ", diff_peaks_file)
+}
+
+# Add debugging information
+message("Dimensions of input diff_peaks: ", paste(dim(diff_peaks), collapse = " x "))
 
 # Read the DiffBind results
 diff_peaks <- readRDS("analysis/diffbind_merged/significant_peaks.rds")
@@ -30,12 +44,17 @@ peakAnno <- annotatePeak(yaf_peaks_gr,
 # Convert annotation to data frame
 anno_df <- as.data.frame(peakAnno)
 
-# Add gene symbols
-anno_df$gene_symbol <- mapIds(org.Hs.eg.db,
-                             keys = anno_df$geneId,
-                             column = "SYMBOL",
-                             keytype = "ENTREZID",
-                             multiVals = "first")
+# Enhanced error handling for gene mapping
+anno_df$gene_symbol <- tryCatch({
+    mapIds(org.Hs.eg.db,
+           keys = anno_df$geneId,
+           column = "SYMBOL",
+           keytype = "ENTREZID",
+           multiVals = "first")
+}, error = function(e) {
+    message("Error mapping gene symbols: ", e$message)
+    return(NA)
+})
 
 # Create output directory if it doesn't exist
 dir.create("analysis/gene_lists", showWarnings = FALSE)

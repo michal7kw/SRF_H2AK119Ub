@@ -16,6 +16,10 @@ conda activate snakemake
 
 cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
+# Add version logging
+echo "Software versions:"
+R --quiet -e "sessionInfo()"
+
 # Verify input files exist
 if [ ! -f "analysis/diffbind_merged/all_peaks.rds" ] || [ ! -f "analysis/diffbind_merged/significant_peaks.rds" ]; then
     echo "ERROR: Required input files from differential binding analysis not found"
@@ -29,10 +33,13 @@ R -e "if (!require('BiocManager', quietly = TRUE)) install.packages('BiocManager
 echo "Starting peak annotation and pathway analysis..."
 Rscript scripts/6_peak_annotation_merged.R
 
-# Check if output files were created
-if [ ! -f "analysis/annotation_merged/tables/peak_annotation_full.txt" ]; then
-    echo "ERROR: Peak annotation failed to generate output files"
-    exit 1
-fi
+# Add more specific output checks
+for file in "analysis/annotation_merged/tables/peak_annotation_full.txt" \
+            "analysis/annotation_merged/figures/annotation_plots.pdf"; do
+    if [ ! -f "$file" ]; then
+        echo "ERROR: Expected output file not found: $file"
+        exit 1
+    fi
+done
 
 echo "Peak annotation and pathway analysis completed successfully" 

@@ -53,11 +53,26 @@ txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
 
 # Annotate peaks with enhanced parameters for CUT&Tag
 print("Annotating peaks...")
-peakAnno <- annotatePeak(sig_peaks, 
-                        tssRegion=c(-3000, 3000),  # Broader TSS region for histone marks
-                        TxDb=txdb, 
-                        annoDb="org.Hs.eg.db",
-                        level="gene")
+tryCatch({
+    # Check if input data is valid
+    print(paste("Number of significant peaks:", length(sig_peaks)))
+    print("Peak data structure:")
+    print(str(sig_peaks))
+    
+    peakAnno <- annotatePeak(sig_peaks, 
+                            tssRegion=c(-3000, 3000),
+                            TxDb=txdb, 
+                            annoDb="org.Hs.eg.db",
+                            level="gene")
+    
+    # Verify annotation results
+    print("Annotation complete. Results summary:")
+    print(summary(peakAnno))
+    
+}, error = function(e) {
+    print(paste("Error in peak annotation:", e))
+    stop("Peak annotation failed. See error message above.")
+})
 
 # Generate comprehensive annotation visualizations
 print("Generating annotation plots...")

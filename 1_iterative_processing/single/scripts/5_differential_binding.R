@@ -11,7 +11,6 @@ library(clusterProfiler)
 # Create necessary directories
 dir.create("analysis/diffbind", recursive = TRUE, showWarnings = FALSE)
 dir.create("analysis/annotation", recursive = TRUE, showWarnings = FALSE)
-dir.create("analysis/enrichment", recursive = TRUE, showWarnings = FALSE)
 
 # Create sample sheet for DiffBind
 samples <- data.frame(
@@ -19,23 +18,34 @@ samples <- data.frame(
     Factor = rep("H2AK119Ub", 6),
     Condition = rep(c("YAF", "GFP"), each=3),
     Replicate = rep(1:3, 2),
-    bamReads = c(
-        paste0("analysis/aligned/YAF-", 1:3, ".dedup.bam"),
-        paste0("analysis/aligned/GFP-", 1:3, ".dedup.bam")
-    ),
-    Peaks = c(
-        paste0("analysis/peaks/YAF-", 1:3, "_peaks.broadPeak"),
-        paste0("analysis/peaks/GFP-", 1:3, "_peaks.broadPeak")
-    ),
+    bamReads = file.path("analysis/aligned", 
+                        c(paste0("YAF_", 1:3, ".dedup.bam"),
+                          paste0("GFP_", 1:3, ".dedup.bam"))),
+    Peaks = file.path("analysis/peaks",
+                     c(paste0("YAF_", 1:3, "_peaks.broadPeak"),
+                       paste0("GFP_", 1:3, "_peaks.broadPeak"))),
     PeakCaller = rep("broad", 6)
 )
+
+# Add error checking for file existence
+check_files <- function(files) {
+    missing <- files[!file.exists(files)]
+    if (length(missing) > 0) {
+        stop("Missing files:\n", paste(missing, collapse="\n"))
+    }
+}
+
+# Check if all files exist
+print("Checking input files...")
+check_files(samples$bamReads)
+check_files(samples$Peaks)
 
 # Create DiffBind object
 print("Creating DiffBind object...")
 dba_data <- dba(sampleSheet=samples,
-                minOverlap=2,  # Minimum number of overlapping samples for consensus peaks
+                minOverlap=2,
                 peakFormat="bed",
-                peakCaller="raw",
+                peakCaller="broad",
                 config=data.frame(AnalysisMethod="max",
                                 fragmentSize=150,
                                 doBlacklist=TRUE))
@@ -51,7 +61,8 @@ dba_data <- dba.count(dba_data,
 
 # Generate QC plots
 print("Generating QC plots...")
-pdf("analysis/diffbind/qc_plots.pdf")
+pdf("../analysis/diffbind/qc_plots.pdf")
+
 # Sample correlation heatmap
 dba.plotHeatmap(dba_data, correlations=TRUE,
                 main="Sample Correlations")
@@ -99,24 +110,41 @@ dev.off()
 # Create BED files for visualization
 print("Creating BED files for visualization...")
 df_all <- as.data.frame(res_significant)
+
+# Update column names to match expected format
+names(df_all)[names(df_all) == "seqnames"] <- "Chr"
+names(df_all)[names(df_all) == "start"] <- "Start"
+names(df_all)[names(df_all) == "end"] <- "End"
+
+# Create separate files for YAF and GFP enriched regions
 yaf_enriched <- df_all %>% 
     filter(FDR < 0.05 & Fold > 0) %>% 
-    select(seqnames, start, end)
+    select(Chr, Start, End, Fold, FDR)  # Include Fold and FDR for downstream analysis
+
 gfp_enriched <- df_all %>% 
     filter(FDR < 0.05 & Fold < 0) %>% 
-    select(seqnames, start, end)
+    select(Chr, Start, End, Fold, FDR)
 
+# Save BED files with consistent paths
 write.table(yaf_enriched, 
             file="analysis/diffbind/YAF_enriched.bed", 
             sep="\t", 
             quote=FALSE, 
             row.names=FALSE, 
-            col.names=FALSE)
+            col.names=TRUE)  # Include headers for downstream analysis
+
 write.table(gfp_enriched, 
             file="analysis/diffbind/GFP_enriched.bed", 
             sep="\t", 
             quote=FALSE, 
             row.names=FALSE, 
-            col.names=FALSE)
+            col.names=TRUE)
+
+# Save the complete results table for downstream analysis
+write.table(df_all,
+            file="analysis/diffbind/all_differential_peaks.txt",
+            sep="\t",
+            quote=FALSE,
+            row.names=FALSE)
 
 print("Differential binding analysis completed")

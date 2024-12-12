@@ -13,8 +13,10 @@ dir.create("analysis/diffbind_merged", recursive = TRUE, showWarnings = FALSE)
 dir.create("analysis/annotation_merged", recursive = TRUE, showWarnings = FALSE)
 dir.create("analysis/enrichment_merged", recursive = TRUE, showWarnings = FALSE)
 
-# Load sample configuration
-source("config/samples.conf")
+# # Load sample configuration
+# source("config/samples.conf")
+# Define samples directly in R
+source("config/samples.R")
 
 # Function to check if files exist and have content
 check_files <- function(samples_df) {
@@ -90,6 +92,10 @@ dba_data <- tryCatch({
     print(e)
     stop(e)
 })
+
+# Add more informative messages during analysis
+print(paste("Number of samples loaded:", length(dba_data$samples)))
+print(paste("Number of peaks before filtering:", length(dba_data$peaks)))
 
 # Count reads in peaks
 print("Counting reads in peaks...")

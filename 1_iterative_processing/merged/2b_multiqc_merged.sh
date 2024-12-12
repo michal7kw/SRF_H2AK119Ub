@@ -12,7 +12,7 @@
 
 # Load conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate snakemake
+conda activate smarcb1_analysis
 
 cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/merged
 
@@ -22,6 +22,16 @@ source config/samples.conf
 # Create directories
 mkdir -p analysis/multiqc_merged
 mkdir -p analysis/qc_merged
+
+# Add version logging
+echo "Software versions:"
+multiqc --version
+
+# Add input checking
+if [ ! -d "analysis/fastqc_merged/pre_trim" ] || [ ! -d "analysis/fastqc_merged/post_trim" ]; then
+    echo "ERROR: FastQC directories not found"
+    exit 1
+fi
 
 # Run MultiQC for pre-trimming data
 echo "Creating pre-trimming MultiQC report..."
@@ -38,6 +48,12 @@ multiqc \
     --outdir analysis/multiqc_merged \
     --title "Post-trimming QC Report (Technical Replicates)" \
     analysis/fastqc_merged/post_trim/*_paired_fastqc*
+
+# Add output verification
+if [ ! -f "analysis/multiqc_merged/multiqc_post_trimming_merged.html" ]; then
+    echo "ERROR: MultiQC failed to generate report"
+    exit 1
+fi
 
 # Generate QC summary for technical replicates
 echo "Sample,RawReads,CleanReads,DuplicationRate" > analysis/qc_merged/qc_summary_tech_reps.csv

@@ -79,3 +79,23 @@ frip=$(echo "scale=4; $reads_in_peaks / $total_reads" | bc)
 echo "FRiP score: ${frip}" >> analysis/peaks_merged/${merged_sample}_peak_stats.txt
 
 echo "Peak calling completed for ${merged_sample}" 
+
+set -e
+set -u
+
+# Add version logging
+echo "Software versions:"
+macs2 --version
+bamCoverage --version
+
+# Add input validation
+if [ ! -f "analysis/aligned_merged/tech_reps/${merged_sample}.dedup.bam" ]; then
+    echo "ERROR: Input BAM file not found for ${merged_sample}"
+    exit 1
+fi
+
+# Add completion check
+if [ ! -f "analysis/peaks_merged/${merged_sample}_peaks.broadPeak" ]; then
+    echo "ERROR: Peak calling failed for ${merged_sample}"
+    exit 1
+fi 

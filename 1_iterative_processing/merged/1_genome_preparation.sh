@@ -39,10 +39,18 @@ gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 echo "Building human genome index..."
 bowtie2-build --threads 32 Homo_sapiens.GRCh38.dna.primary_assembly.fa GRCh38
 
+# Add error checking
+set -e  # Exit on error
+set -u  # Exit on undefined variable
 
-# # Generate chromosome sizes file for downstream analysis
-# samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa
-# cut -f1,2 Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai > hg38.chrom.sizes
+# Add version logging
+echo "Software versions:"
+bowtie2 --version
+samtools --version
+
+# Generate chromosome sizes file for downstream analysis
+samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa
+cut -f1,2 Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai > hg38.chrom.sizes
 
 cd ..
 

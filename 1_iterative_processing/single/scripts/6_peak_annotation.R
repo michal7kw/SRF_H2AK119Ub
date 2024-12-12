@@ -117,7 +117,7 @@ write.table(anno_df,
 # Create gene lists with proper symbols
 print("Creating gene lists...")
 # First, check the EntrezIDs
-print("Number of EntrezIDs before mapping:", length(unique(anno_df$geneId)))
+print(paste("Number of EntrezIDs before mapping:", length(unique(anno_df$geneId))))
 
 # Add error checking and verbose mapping
 genes_df <- tryCatch({
@@ -128,8 +128,12 @@ genes_df <- tryCatch({
                      keytype = "ENTREZID",
                      multiVals = "first")
     
+    if (all(is.na(symbols))) {
+        stop("No genes could be mapped to symbols")
+    }
+    
     # Print diagnostic information
-    print("Number of mapped symbols:", length(symbols[!is.na(symbols)]))
+    print(paste("Number of mapped symbols:", length(symbols[!is.na(symbols)])))
     
     # Create dataframe only with valid mappings
     valid_indices <- !is.na(symbols)
@@ -144,7 +148,7 @@ genes_df <- tryCatch({
     return(NULL)
 })
 
-# Check if genes_df was created successfully
+# Add explicit check for empty results
 if (is.null(genes_df) || nrow(genes_df) == 0) {
     warning("No genes could be mapped successfully. Stopping analysis.")
     quit(status = 1)

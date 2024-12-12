@@ -32,6 +32,14 @@ mkdir -p logs/merged
 # Get technical replicates for this merged sample
 tech_reps=(${TECH_REPS[$merged_sample]})
 
+# Add input validation
+for rep in ${tech_reps[@]}; do
+    if [ ! -f "analysis/aligned_merged/tech_reps/${rep}.dedup.bam" ]; then
+        echo "ERROR: Input BAM file not found for replicate ${rep}"
+        exit 1
+    fi
+done
+
 # Merge BAM files
 echo "Merging technical replicates for ${merged_sample}..."
 samtools merge -@ 16 \
@@ -64,4 +72,10 @@ picard CollectInsertSizeMetrics \
 # Clean up intermediate files
 rm analysis/aligned_merged/merged/${merged_sample}.merged.bam
 
-echo "Technical replicate merging completed for ${merged_sample}" 
+echo "Technical replicate merging completed for ${merged_sample}"
+
+# Add completion check
+if [ ! -f "analysis/aligned_merged/merged/${merged_sample}.merged.sorted.bam" ]; then
+    echo "ERROR: Merging failed for ${merged_sample}"
+    exit 1
+fi 

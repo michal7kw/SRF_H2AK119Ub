@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=3_alignment
 #SBATCH --account=kubacki.michal
-#SBATCH --mem=128GB
+#SBATCH --mem=32GB
 #SBATCH --time=INFINITE
 #SBATCH --nodes=1
-#SBATCH --ntasks=16
+#SBATCH --ntasks=8
 #SBATCH --array=0-5
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=kubacki.michal@hsr.it
@@ -13,7 +13,7 @@
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate snakemake
+conda activate smarcb1_analysis
 
 cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/single
 
@@ -23,28 +23,28 @@ sample=${samples[$SLURM_ARRAY_TASK_ID]}
 
 echo "Processing sample: ${sample}"
 
-# CUT&Tag-optimized alignment with Bowtie2
-echo "Aligning ${sample}..."
-bowtie2 -p 16 \
-    -x ../../genome/GRCh38 \
-    --local --very-sensitive-local \
-    --no-mixed --no-discordant \
-    --no-overlap --no-dovetail \
-    -I 10 -X 700 \
-    -1 analysis/trimmed/${sample}_R1_paired.fastq.gz \
-    -2 analysis/trimmed/${sample}_R2_paired.fastq.gz \
-    2> logs/aligned/${sample}.align.log | \
-    samtools view -@ 16 -bS - > analysis/aligned/${sample}.bam
+# # CUT&Tag-optimized alignment with Bowtie2
+# echo "Aligning ${sample}..."
+# bowtie2 -p 16 \
+#     -x ../../genome/GRCh38 \
+#     --local --very-sensitive-local \
+#     --no-mixed --no-discordant \
+#     --no-overlap --no-dovetail \
+#     -I 10 -X 700 \
+#     -1 analysis/trimmed/${sample}_R1_paired.fastq.gz \
+#     -2 analysis/trimmed/${sample}_R2_paired.fastq.gz \
+#     2> logs/aligned/${sample}.align.log | \
+#     samtools view -@ 16 -bS - > analysis/aligned/${sample}.bam
 
-# Sort BAM
-echo "Sorting ${sample}..."
-samtools sort -@ 16 \
-    analysis/aligned/${sample}.bam \
-    -o analysis/aligned/${sample}.sorted.bam
+# # Sort BAM
+# echo "Sorting ${sample}..."
+# samtools sort -@ 16 \
+#     analysis/aligned/${sample}.bam \
+#     -o analysis/aligned/${sample}.sorted.bam
 
-# Index BAM
-echo "Indexing ${sample}..."
-samtools index analysis/aligned/${sample}.sorted.bam
+# # Index BAM
+# echo "Indexing ${sample}..."
+# samtools index analysis/aligned/${sample}.sorted.bam
 
 # Mark duplicates
 echo "Marking duplicates for ${sample}..."

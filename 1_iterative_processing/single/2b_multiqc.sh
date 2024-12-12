@@ -36,9 +36,9 @@ multiqc \
     --title "Post-trimming QC Report" \
     analysis/fastqc/post_trim/*_paired_fastqc*
 
-# Generate QC summary
+# Generate basic QC summary without duplication rates
 echo "Sample,RawReads,CleanReads,DuplicationRate" > analysis/qc/qc_summary.csv
-for sample in GFP_{1,2,3} YAF_{1,2,3}; do
+for sample in GFP_1 GFP_2 GFP_3 YAF_1 YAF_2 YAF_3; do
     raw_reads=$(zcat ../../DATA/fastq/${sample}_R1_001.fastq.gz | echo $((`wc -l`/4)))
     clean_reads=$(zcat analysis/trimmed/${sample}_R1_paired.fastq.gz | echo $((`wc -l`/4)))
     dup_rate=$(grep "PERCENT_DUPLICATION" analysis/qc/${sample}_dup_metrics.txt | cut -f9)

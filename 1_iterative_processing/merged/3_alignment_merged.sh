@@ -20,14 +20,24 @@ cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_process
 # Load sample configuration
 source config/samples.conf
 
-# Get current sample
-sample=${SAMPLES[$SLURM_ARRAY_TASK_ID]}
+# Get current sample - FIXED: Use MERGED_SAMPLES instead of SAMPLES
+sample=${MERGED_SAMPLES[$SLURM_ARRAY_TASK_ID]}
+if [ -z "$sample" ]; then
+    echo "ERROR: Sample name is empty. SLURM_ARRAY_TASK_ID=$SLURM_ARRAY_TASK_ID"
+    exit 1
+fi
 echo "Processing sample: ${sample}"
 
 # Create output directories
 mkdir -p analysis/aligned_merged/tech_reps
 mkdir -p analysis/qc_merged/tech_reps
 mkdir -p logs/aligned_merged
+
+# Verify input files exist
+if [ ! -f "analysis/trimmed_merged/${sample}_R1_paired.fastq.gz" ] || [ ! -f "analysis/trimmed_merged/${sample}_R2_paired.fastq.gz" ]; then
+    echo "ERROR: Input fastq files not found for sample ${sample}"
+    exit 1
+fi
 
 # CUT&Tag-optimized alignment with Bowtie2
 echo "Aligning ${sample}..."
@@ -54,7 +64,7 @@ samtools index analysis/aligned_merged/tech_reps/${sample}.sorted.bam
 
 # Mark duplicates
 echo "Marking duplicates for ${sample}..."
-picard MarkDuplicates \
+picard -Xmx64g MarkDuplicates \
     I=analysis/aligned_merged/tech_reps/${sample}.sorted.bam \
     O=analysis/aligned_merged/tech_reps/${sample}.dedup.bam \
     M=analysis/qc_merged/tech_reps/${sample}_dup_metrics.txt \
@@ -82,4 +92,10 @@ rm analysis/aligned_merged/tech_reps/${sample}.bam
 rm analysis/aligned_merged/tech_reps/${sample}.sorted.bam
 rm analysis/aligned_merged/tech_reps/${sample}.sorted.bam.bai
 
-echo "Alignment completed for ${sample}" 
+echo "Alignment completed for ${sample}"
+
+# Add completion check
+if [ ! -f "analysis/aligned_merged/tech_reps/${sample}.dedup.bam" ]; then
+    echo "ERROR: Alignment failed for ${sample}"
+    exit 1
+fi

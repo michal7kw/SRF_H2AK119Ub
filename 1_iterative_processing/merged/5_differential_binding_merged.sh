@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=5_diff_bind_merged
+#SBATCH --job-name=5m_diff_bind_merged
 #SBATCH --account=kubacki.michal
 #SBATCH --mem=128GB
 #SBATCH --time=INFINITE
@@ -43,3 +43,20 @@ if [ ! -f "analysis/diffbind_merged/all_peaks.rds" ] || [ ! -f "analysis/diffbin
 fi
 
 echo "Differential binding analysis completed successfully" 
+
+# Add R package version logging
+R --quiet -e "sessionInfo()"
+
+# Add input validation
+for dir in "analysis/peaks_merged" "analysis/aligned_merged"; do
+    if [ ! -d "$dir" ]; then
+        echo "ERROR: Required directory $dir not found"
+        exit 1
+    fi
+done
+
+# Add completion check
+if [ ! -f "analysis/diffbind_merged/significant_peaks.rds" ]; then
+    echo "ERROR: Differential binding analysis failed"
+    exit 1
+fi 

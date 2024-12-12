@@ -12,7 +12,7 @@
 
 # Activate conda environment
 source /opt/common/tools/ric.cosr/miniconda3/bin/activate
-conda activate snakemake
+conda activate smarcb1_analysis
 
 # Change to project directory
 cd /beegfs/scratch/ric.broccoli/kubacki.michal/SRF_H2AK119Ub/1_iterative_processing/single
