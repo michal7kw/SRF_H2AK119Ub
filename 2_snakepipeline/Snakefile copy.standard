@@ -1,0 +1,111 @@
+# Snakefile for standard pipeline (without technical replicate merging)
+
+import os
+from pathlib import Path
+
+# Load configuration
+configfile: "config/samples.conf"
+
+# Get samples from config
+SAMPLES = config["samples"]
+
+
+# Define final output files that you want to generate
+rule all:
+    input:
+        # QC outputs
+        expand("analysis/fastqc/pre_trim/{sample}_{read}_001_fastqc.html",
+               sample=SAMPLES, read=["R1", "R2"]),
+        "analysis/multiqc/multiqc_pre_trimming.html",
+        # Alignment outputs
+        expand("analysis/aligned/{sample}.dedup.bam", sample=SAMPLES),
+        expand("analysis/aligned/{sample}.dedup.bam.bai", sample=SAMPLES),
+        # Peak calling outputs
+        expand("analysis/peaks/{sample}_peaks.broadPeak", sample=SAMPLES),
+        # Differential binding outputs
+        "analysis/diffbind/all_peaks.rds",
+        "analysis/diffbind/significant_peaks.rds",
+        # Peak annotation outputs
+        "analysis/annotation/tables/peak_annotation_full.txt",
+        # Motif analysis outputs
+        "analysis/motifs/motif_summary.txt"
+
+# Genome preparation
+rule prepare_genome:
+    output:
+        index = "genome/GRCh38.1.bt2"
+    shell:
+        "sbatch 1_genome_preparation.sh"
+
+# Quality control
+rule quality_control:
+    input:
+        r1 = "DATA/fastq/{sample}_R1_001.fastq.gz",
+        r2 = "DATA/fastq/{sample}_R2_001.fastq.gz"
+    output:
+        fastqc_r1 = "analysis/fastqc/pre_trim/{sample}_R1_001_fastqc.html",
+        fastqc_r2 = "analysis/fastqc/pre_trim/{sample}_R2_001_fastqc.html",
+        trimmed_r1 = "analysis/trimmed/{sample}_R1_paired.fastq.gz",
+        trimmed_r2 = "analysis/trimmed/{sample}_R2_paired.fastq.gz"
+    shell:
+        "sbatch 2_quality_control.sh"
+
+# MultiQC
+rule multiqc:
+    input:
+        expand("analysis/fastqc/pre_trim/{sample}_{read}_001_fastqc.html",
+               sample=SAMPLES, read=["R1", "R2"])
+    output:
+        "analysis/multiqc/multiqc_pre_trimming.html"
+    shell:
+        "sbatch 2_multiqc.sh"
+
+# Alignment
+rule alignment:
+    input:
+        r1 = "analysis/trimmed/{sample}_R1_paired.fastq.gz",
+        r2 = "analysis/trimmed/{sample}_R2_paired.fastq.gz"
+    output:
+        bam = "analysis/aligned/{sample}.dedup.bam",
+        bai = "analysis/aligned/{sample}.dedup.bam.bai"
+    shell:
+        "sbatch 3_alignment.sh"
+
+# Peak calling
+rule peak_calling:
+    input:
+        bam = "analysis/aligned/{sample}.dedup.bam",
+        bai = "analysis/aligned/{sample}.dedup.bam.bai"
+    output:
+        peaks = "analysis/peaks/{sample}_peaks.broadPeak"
+    shell:
+        "sbatch 4_peak_calling.sh"
+
+# Differential binding
+rule differential_binding:
+    input:
+        peaks = expand("analysis/peaks/{sample}_peaks.broadPeak", sample=SAMPLES),
+        bams = expand("analysis/aligned/{sample}.dedup.bam", sample=SAMPLES)
+    output:
+        all_peaks = "analysis/diffbind/all_peaks.rds",
+        sig_peaks = "analysis/diffbind/significant_peaks.rds"
+    shell:
+        "sbatch 5_differential_binding.sh"
+
+# Peak annotation
+rule peak_annotation:
+    input:
+        peaks = "analysis/diffbind/significant_peaks.rds"
+    output:
+        annotation = "analysis/annotation/tables/peak_annotation_full.txt"
+    shell:
+        "sbatch 6_peak_annotation.sh"
+
+# Motif analysis
+rule motif_analysis:
+    input:
+        peaks = "analysis/diffbind/significant_peaks.rds"
+    output:
+        summary = "analysis/motifs/motif_summary.txt"
+    shell:
+        "sbatch 7_motif_analysis.sh" 

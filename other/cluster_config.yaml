@@ -1,0 +1,8 @@
+__default__:
+  account: kubacki.michal
+  partition: workq
+  nodes: 1
+  mem: 128G
+  time: INFINITE
+  output: logs/slurm/%j.out
+  error: logs/slurm/%j.err

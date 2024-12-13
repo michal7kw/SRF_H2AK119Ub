@@ -1,0 +1,182 @@
+# Snakefile for standard pipeline (without technical replicate merging)
+
+import os
+from pathlib import Path
+
+# Load configuration
+configfile: "config/samples.conf"
+
+# Get samples from config
+SAMPLES = config["samples"]
+
+# Define final output files that you want to generate
+rule all:
+    input:
+        # QC outputs
+        expand("analysis/fastqc/pre_trim/{sample}_{read}_001_fastqc.html",
+               sample=SAMPLES, read=["R1", "R2"]),
+        "analysis/multiqc/multiqc_pre_trimming.html",
+        # Alignment outputs
+        expand("analysis/aligned/{sample}.dedup.bam", sample=SAMPLES),
+        expand("analysis/aligned/{sample}.dedup.bam.bai", sample=SAMPLES),
+        # Peak calling outputs
+        expand("analysis/peaks/{sample}_peaks.broadPeak", sample=SAMPLES),
+        # Differential binding outputs
+        "analysis/diffbind/all_peaks.rds",
+        "analysis/diffbind/significant_peaks.rds",
+        # Peak annotation outputs
+        "analysis/annotation/tables/peak_annotation_full.txt",
+        # Motif analysis outputs
+        "analysis/motifs/motif_summary.txt"
+
+# Genome preparation
+rule prepare_genome:
+    output:
+        index = "genome/GRCh38.1.bt2"
+    params:
+        genome_fasta = "genome/GRCh38.fa",
+        genome_dir = "genome"
+    threads: 8
+    shell:
+        """
+        bowtie2-build --threads {threads} {params.genome_fasta} {params.genome_dir}/GRCh38
+        """
+
+# Quality control
+rule quality_control:
+    input:
+        r1 = "DATA/fastq/{sample}_R1_001.fastq.gz",
+        r2 = "DATA/fastq/{sample}_R2_001.fastq.gz"
+    output:
+        fastqc_r1 = "analysis/fastqc/pre_trim/{sample}_R1_001_fastqc.html",
+        fastqc_r2 = "analysis/fastqc/pre_trim/{sample}_R2_001_fastqc.html",
+        trimmed_r1 = "analysis/trimmed/{sample}_R1_paired.fastq.gz",
+        trimmed_r2 = "analysis/trimmed/{sample}_R2_paired.fastq.gz"
+    params:
+        fastqc_dir = "analysis/fastqc/pre_trim",
+        trim_dir = "analysis/trimmed"
+    threads: 8
+    shell:
+        """
+        # Create output directories
+        mkdir -p {params.fastqc_dir}
+        mkdir -p {params.trim_dir}
+        
+        # Run FastQC
+        fastqc -t {threads} -o {params.fastqc_dir} {input.r1} {input.r2}
+        
+        # Run Trimmomatic
+        trimmomatic PE -threads {threads} \
+            {input.r1} {input.r2} \
+            {output.trimmed_r1} {params.trim_dir}/{wildcards.sample}_R1_unpaired.fastq.gz \
+            {output.trimmed_r2} {params.trim_dir}/{wildcards.sample}_R2_unpaired.fastq.gz \
+            ILLUMINACLIP:adapters/TruSeq3-PE.fa:2:30:10 \
+            LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
+        """
+
+# MultiQC
+rule multiqc:
+    input:
+        expand("analysis/fastqc/pre_trim/{sample}_{read}_001_fastqc.html",
+               sample=SAMPLES, read=["R1", "R2"])
+    output:
+        "analysis/multiqc/multiqc_pre_trimming.html"
+    params:
+        fastqc_dir = "analysis/fastqc/pre_trim",
+        multiqc_dir = "analysis/multiqc"
+    shell:
+        """
+        mkdir -p {params.multiqc_dir}
+        multiqc {params.fastqc_dir} -o {params.multiqc_dir} -n multiqc_pre_trimming.html
+        """
+
+# Alignment
+rule alignment:
+    input:
+        r1 = "analysis/trimmed/{sample}_R1_paired.fastq.gz",
+        r2 = "analysis/trimmed/{sample}_R2_paired.fastq.gz"
+    output:
+        bam = "analysis/aligned/{sample}.dedup.bam",
+        bai = "analysis/aligned/{sample}.dedup.bam.bai"
+    params:
+        genome_index = "genome/GRCh38",
+        tmp_bam = "analysis/aligned/{sample}.bam",
+        sorted_bam = "analysis/aligned/{sample}.sorted.bam",
+        metrics_file = "analysis/aligned/{sample}.metrics.txt"
+    threads: 8
+    shell:
+        """
+        # Align with bowtie2
+        bowtie2 -p {threads} -x {params.genome_index} \
+            -1 {input.r1} -2 {input.r2} | \
+            samtools view -bS - > {params.tmp_bam}
+
+        # Sort BAM
+        samtools sort -@ {threads} -o {params.sorted_bam} {params.tmp_bam}
+
+        # Mark duplicates
+        picard MarkDuplicates \
+            I={params.sorted_bam} \
+            O={output.bam} \
+            M={params.metrics_file} \
+            REMOVE_DUPLICATES=true
+
+        # Index BAM
+        samtools index {output.bam}
+
+        # Clean up intermediate files
+        rm {params.tmp_bam} {params.sorted_bam}
+        """
+
+# Peak calling
+rule peak_calling:
+    input:
+        bam = "analysis/aligned/{sample}.dedup.bam",
+        bai = "analysis/aligned/{sample}.dedup.bam.bai"
+    output:
+        peaks = "analysis/peaks/{sample}_peaks.broadPeak"
+    params:
+        output_dir = "analysis/peaks",
+        name = "{sample}"
+    threads: 4
+    shell:
+        """
+        mkdir -p {params.output_dir}
+        
+        macs2 callpeak \
+            -t {input.bam} \
+            -f BAMPE \
+            -g hs \
+            --broad \
+            -n {params.name} \
+            --outdir {params.output_dir}
+        """
+
+# Differential binding
+rule differential_binding:
+    input:
+        peaks = expand("analysis/peaks/{sample}_peaks.broadPeak", sample=SAMPLES),
+        bams = expand("analysis/aligned/{sample}.dedup.bam", sample=SAMPLES)
+    output:
+        all_peaks = "analysis/diffbind/all_peaks.rds",
+        sig_peaks = "analysis/diffbind/significant_peaks.rds"
+    script:
+        "scripts/differential_binding.R"
+
+# Peak annotation
+rule peak_annotation:
+    input:
+        peaks = "analysis/diffbind/significant_peaks.rds"
+    output:
+        annotation = "analysis/annotation/tables/peak_annotation_full.txt"
+    script:
+        "scripts/peak_annotation.R"
+
+# Motif analysis
+rule motif_analysis:
+    input:
+        peaks = "analysis/diffbind/significant_peaks.rds"
+    output:
+        summary = "analysis/motifs/motif_summary.txt"
+    script:
+        "scripts/motif_analysis.R" 

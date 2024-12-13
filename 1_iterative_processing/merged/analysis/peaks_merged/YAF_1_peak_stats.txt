@@ -1,0 +1,5 @@
+YAF_1 peak statistics:
+Total peaks: 
+Mean peak width: 
+Peak width std: 
+FRiP score: 

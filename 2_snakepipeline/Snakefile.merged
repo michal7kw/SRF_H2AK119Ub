@@ -1,0 +1,118 @@
+# Snakefile for merged pipeline (with technical replicate merging)
+
+import os
+from pathlib import Path
+
+# Load configuration
+configfile: "config/samples.conf"
+
+# Get samples from config
+SAMPLES = config["samples"]
+MERGED_SAMPLES = config["merged_samples"]
+
+# Define final output files
+rule all:
+    input:
+        # QC outputs
+        expand("analysis/fastqc_merged/pre_trim/{sample}_{read}_001_fastqc.html",
+               sample=SAMPLES, read=["R1", "R2"]),
+        "analysis/multiqc_merged/multiqc_pre_trimming_merged.html",
+        # Alignment outputs
+        expand("analysis/aligned_merged/merged/{sample}.merged.sorted.bam",
+               sample=MERGED_SAMPLES),
+        # Peak calling outputs
+        expand("analysis/peaks_merged/{sample}_peaks.broadPeak",
+               sample=MERGED_SAMPLES),
+        # Differential binding outputs
+        "analysis/diffbind_merged/all_peaks.rds",
+        "analysis/diffbind_merged/significant_peaks.rds",
+        # Peak annotation outputs
+        "analysis/annotation_merged/tables/peak_annotation_full.txt",
+        # Motif analysis outputs
+        "analysis/motifs_merged/motif_summary.txt"
+
+# Quality control for technical replicates
+rule quality_control_merged:
+    input:
+        r1 = "DATA/fastq/{sample}_R1_001.fastq.gz",
+        r2 = "DATA/fastq/{sample}_R2_001.fastq.gz"
+    output:
+        fastqc_r1 = "analysis/fastqc_merged/pre_trim/{sample}_R1_001_fastqc.html",
+        fastqc_r2 = "analysis/fastqc_merged/pre_trim/{sample}_R2_001_fastqc.html",
+        trimmed_r1 = "analysis/trimmed_merged/{sample}_R1_paired.fastq.gz",
+        trimmed_r2 = "analysis/trimmed_merged/{sample}_R2_paired.fastq.gz"
+    shell:
+        "sbatch 2_quality_control_merged.sh"
+
+# MultiQC for merged pipeline
+rule multiqc_merged:
+    input:
+        expand("analysis/fastqc_merged/pre_trim/{sample}_{read}_001_fastqc.html",
+               sample=SAMPLES, read=["R1", "R2"])
+    output:
+        "analysis/multiqc_merged/multiqc_pre_trimming_merged.html"
+    shell:
+        "sbatch 2_multiqc_merged.sh"
+
+# Alignment of technical replicates
+rule alignment_merged:
+    input:
+        r1 = "analysis/trimmed_merged/{sample}_R1_paired.fastq.gz",
+        r2 = "analysis/trimmed_merged/{sample}_R2_paired.fastq.gz"
+    output:
+        bam = "analysis/aligned_merged/tech_reps/{sample}.dedup.bam",
+        bai = "analysis/aligned_merged/tech_reps/{sample}.dedup.bam.bai"
+    shell:
+        "sbatch 3_alignment_merged.sh"
+
+# Merge technical replicates
+rule merge_replicates:
+    input:
+        lambda wildcards: expand("analysis/aligned_merged/tech_reps/{tech_rep}.dedup.bam",
+                               tech_rep=config["tech_reps"][wildcards.sample].split())
+    output:
+        bam = "analysis/aligned_merged/merged/{sample}.merged.sorted.bam",
+        bai = "analysis/aligned_merged/merged/{sample}.merged.sorted.bam.bai"
+    shell:
+        "sbatch 3.5_merge_technical_replicates.sh"
+
+# Peak calling on merged data
+rule peak_calling_merged:
+    input:
+        bam = "analysis/aligned_merged/merged/{sample}.merged.sorted.bam",
+        bai = "analysis/aligned_merged/merged/{sample}.merged.sorted.bam.bai"
+    output:
+        peaks = "analysis/peaks_merged/{sample}_peaks.broadPeak"
+    shell:
+        "sbatch 4_peak_calling_merged.sh"
+
+# Differential binding on merged data
+rule differential_binding_merged:
+    input:
+        peaks = expand("analysis/peaks_merged/{sample}_peaks.broadPeak",
+                      sample=MERGED_SAMPLES),
+        bams = expand("analysis/aligned_merged/merged/{sample}.merged.sorted.bam",
+                     sample=MERGED_SAMPLES)
+    output:
+        all_peaks = "analysis/diffbind_merged/all_peaks.rds",
+        sig_peaks = "analysis/diffbind_merged/significant_peaks.rds"
+    shell:
+        "sbatch 5_differential_binding_merged.sh"
+
+# Peak annotation on merged data
+rule peak_annotation_merged:
+    input:
+        peaks = "analysis/diffbind_merged/significant_peaks.rds"
+    output:
+        annotation = "analysis/annotation_merged/tables/peak_annotation_full.txt"
+    shell:
+        "sbatch 6_peak_annotation_merged.sh"
+
+# Motif analysis on merged data
+rule motif_analysis_merged:
+    input:
+        peaks = "analysis/diffbind_merged/significant_peaks.rds"
+    output:
+        summary = "analysis/motifs_merged/motif_summary.txt"
+    shell:
+        "sbatch 7_motif_analysis_merged.sh" 

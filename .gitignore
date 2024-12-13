@@ -1,14 +1,25 @@
-# Ignore everything
-*
-
-# But not these files
-!*.R
-!*.sh
-
-# Even if they are in subdirectories
-!*/
-
-# Keep .gitignore
-!.gitignore
+*.bw
+*.zip
+*.json
+*.fa
+*flagstat.*
+*.flagstat
+*.fastqc
+*.bam
+*.bai
+*.log
+*.gz
+*.gzip
+*.fastq
+*.fq
+*.out
+*.err
+*.log
+*.rds
+*.bed
+*.bedgraph
+*.bw
+*.bigwig
+*.bt2
 
 .snakemake/
